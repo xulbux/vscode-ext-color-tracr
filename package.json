@@ -1,7 +1,7 @@
 {
   "name": "color-tracr",
   "displayName": "Color Tracr",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Highly performant, ultra-lightweight color marking extension for the editor.",
   "categories": [
     "Other",
@@ -43,10 +43,10 @@
   "license": "MIT",
   "author": {
     "name": "XulbuX",
-    "email": "xulbux.real@gmail.com"
+    "email": "hi@xul.is"
   },
   "maintainers": [
-    "XulbuX <xulbux.real@gmail.com>"
+    "XulbuX <hi@xul.is>"
   ],
   "repository": {
     "type": "git",
