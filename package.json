@@ -1,12 +1,9 @@
 {
   "name": "color-tracr",
-  "displayName": "Color Tracr",
   "version": "1.2.3",
+  "displayName": "Color Tracr",
   "description": "Highly performant, ultra-lightweight color marking extension for the editor.",
-  "categories": [
-    "Other",
-    "Visualization"
-  ],
+  "categories": ["Other", "Visualization"],
   "keywords": [
     "cmyk",
     "colors",
@@ -37,81 +34,34 @@
     "variables",
     "wide-gamut"
   ],
-  "bugs": {
-    "url": "https://github.com/xulbux/vscode-ext-color-tracr/issues"
-  },
-  "license": "MIT",
-  "author": {
-    "name": "XulbuX",
-    "email": "hi@xul.is"
-  },
-  "maintainers": [
-    "XulbuX <hi@xul.is>"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/xulbux/vscode-ext-color-tracr"
-  },
-  "sponsor": {
-    "url": "https://github.com/sponsors/xulbux"
-  },
+  "author": { "name": "XulbuX", "email": "hi@xul.is" },
+  "maintainers": ["XulbuX <hi@xul.is>"],
   "publisher": "xulbux",
+  "bugs": { "url": "https://github.com/xulbux/vscode-ext-color-tracr/issues" },
+  "repository": { "type": "git", "url": "https://github.com/xulbux/vscode-ext-color-tracr" },
+  "license": "MIT",
   "main": "./dist/extension.js",
-  "scripts": {
-    "compile": "node esbuild.js",
-    "esbuild-watch": "node esbuild.js --watch",
-    "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check",
-    "lint": "oxlint --fix",
-    "lint:check": "oxlint",
-    "type-check": "tsc --noEmit",
-    "vscode:prepublish": "node esbuild.js --production",
-    "watch": "node esbuild.js --watch"
-  },
-  "devDependencies": {
-    "@types/node": "^26.1.0",
-    "@types/vscode": "^1.125.0",
-    "esbuild": "^0.25.0",
-    "jiti": "^2.7.0",
-    "oxfmt": "^0.36.0",
-    "oxlint": "^1.71.0",
-    "typescript": "^5.9.3"
-  },
+  "activationEvents": ["onStartupFinished"],
   "contributes": {
     "configuration": {
       "title": "Color Tracr",
       "properties": {
         "colorTracr.enable": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [
-            "*"
-          ],
+          "items": { "type": "string" },
+          "default": ["*"],
           "markdownDescription": "Language IDs where Color Tracr marks colors.\n\n- Use `*` to enable it for every language.\n- Prepend `!` to a language ID to exclude it (e.g., `[\"*\", \"!markdown\"]`).\n- Leave the list empty to disable the extension everywhere."
         },
         "colorTracr.excludePaths": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [
-            "**/node_modules/**",
-            "**/dist/**",
-            "**/build/**",
-            "**/.next/**"
-          ],
+          "items": { "type": "string" },
+          "default": ["**/node_modules/**", "**/dist/**", "**/build/**", "**/.next/**"],
           "markdownDescription": "Glob patterns for files and folders to skip while scanning the workspace for color definitions.\n\nThis only affects the background scan that resolves variables (`var(--…)`, `$…`, `@…`) and Tailwind classes across files. Colors inside the files you open are always marked, regardless of this setting."
         },
         "colorTracr.markerType": {
           "type": "string",
           "default": "highlight",
-          "enum": [
-            "highlight",
-            "dot-before",
-            "dot-after"
-          ],
+          "enum": ["highlight", "dot-before", "dot-after"],
           "markdownDescription": "How each detected color is marked.\n\n- `highlight` – Highlight the color's text with the color itself.\n- `dot-before` – Render a colored dot before the color.\n- `dot-after` – Render a colored dot after the color."
         },
         "colorTracr.showAlpha": {
@@ -126,83 +76,81 @@
         },
         "colorTracr.markVariables": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [
-            "*"
-          ],
+          "items": { "type": "string" },
+          "default": ["*"],
           "markdownDescription": "Mark CSS custom properties (`var(--name)`), SCSS variables (`$name`), and LESS variables (`@name`) with the color they resolve to.\n\nDefinitions are resolved across the whole workspace, so a variable is still marked when it is defined in a different (already scanned) file.\n\nAccepts a list of language IDs – use `*` for all, or prepend `!` to exclude a language."
         },
         "colorTracr.markTailwind": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [
-            "*"
-          ],
+          "items": { "type": "string" },
+          "default": ["*"],
           "markdownDescription": "Mark Tailwind CSS color utility classes such as `bg-red-400` or `text-primary`, including arbitrary values (`bg-[#F66]`) and opacity modifiers (`bg-red-500/50`).\n\nAccepts a list of language IDs – use `*` for all, or prepend `!` to exclude a language."
         },
         "colorTracr.matchRgbWithNoFunction": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
+          "items": { "type": "string" },
           "default": [],
           "markdownDescription": "Mark raw RGB channels that are not wrapped in `rgb()` (e.g., `255, 0, 0` or `255 0 0`).\n\nOnly integer channels are matched; values containing `%` are ignored.\n\nAccepts a list of language IDs – use `*` for all, or prepend `!` to exclude a language."
         },
         "colorTracr.matchHslWithNoFunction": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
+          "items": { "type": "string" },
           "default": [],
           "markdownDescription": "Mark raw HSL values that are not wrapped in `hsl()` (e.g., `255, 100%, 50%`).\n\nThe saturation and lightness must keep their `%` sign so they are not mistaken for plain numbers.\n\nAccepts a list of language IDs – use `*` for all, or prepend `!` to exclude a language."
         },
         "colorTracr.matchLchWithNoFunction": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
+          "items": { "type": "string" },
           "default": [],
           "markdownDescription": "Mark raw LCH values that are not wrapped in `lch()` (e.g., `60% 40 25`).\n\nAccepts a list of language IDs – use `*` for all, or prepend `!` to exclude a language."
         },
         "colorTracr.matchOklchWithNoFunction": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
+          "items": { "type": "string" },
           "default": [],
           "markdownDescription": "Mark raw OKLCH values that are not wrapped in `oklch()` (e.g., `60% 0.15 25`).\n\nAccepts a list of language IDs – use `*` for all, or prepend `!` to exclude a language."
         },
         "colorTracr.useARGB": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
+          "items": { "type": "string" },
           "default": [],
           "markdownDescription": "Interpret alpha-containing hex codes as ARGB instead of RGBA – i.e. `#AARRGGBB` and `#ARGB` rather than `#RRGGBBAA` and `#RGBA`.\n\nThis also re-evaluates hex colors reported by other color providers so they follow the same channel order.\n\nAccepts a list of language IDs – use `*` for all, or prepend `!` to exclude a language."
         }
       }
     }
   },
-  "activationEvents": [
-    "onStartupFinished"
-  ],
+  "scripts": {
+    "compile": "node esbuild.js",
+    "esbuild-watch": "node esbuild.js --watch",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "lint": "oxlint --fix",
+    "lint:check": "oxlint",
+    "type-check": "tsc --noEmit",
+    "vscode:prepublish": "node esbuild.js --production",
+    "watch": "node esbuild.js --watch"
+  },
   "icon": "./assets/icon.png",
-  "engines": {
-    "vscode": "^1.125.0"
+  "engines": { "vscode": "^1.125.0" },
+  "sponsor": { "url": "https://github.com/sponsors/xulbux" },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "@types/vscode": "^1.125.0",
+    "esbuild": "^0.25.0",
+    "jiti": "^2.7.0",
+    "oxfmt": "^0.36.0",
+    "oxlint": "^1.71.0",
+    "typescript": "^5.9.3"
   },
   "__metadata": {
     "id": "39cf6240-75d9-4602-97ff-1c0b1e355e94",
     "publisherId": "77f5e7c0-42af-4d80-ab24-d9657bfebe93",
     "publisherDisplayName": "XulbuX",
     "targetPlatform": "undefined",
-    "updated": false,
     "isPreReleaseVersion": false,
     "hasPreReleaseVersion": false,
     "installedTimestamp": 1710139219097,
+    "updated": false,
     "pinned": false
   }
 }

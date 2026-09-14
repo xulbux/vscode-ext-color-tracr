@@ -4,6 +4,7 @@
   "bracketSameLine": true,
   "bracketSpacing": true,
   "endOfLine": "lf",
+  "ignorePatterns": ["package.json"],
   "objectWrap": "collapse",
   "proseWrap": "preserve",
   "quoteProps": "as-needed",

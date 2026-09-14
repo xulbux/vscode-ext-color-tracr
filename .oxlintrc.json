@@ -10,6 +10,7 @@
   },
   "env": { "builtin": true },
   "globals": {},
+  "ignorePatterns": ["package.json"],
   "plugins": ["eslint", "oxc", "typescript", "unicorn"],
   "rules": {
     "capitalized-comments": "off",
