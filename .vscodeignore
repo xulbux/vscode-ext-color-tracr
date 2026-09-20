@@ -11,9 +11,11 @@ test/
 !assets/icon.png
 .eslintignore
 .gitignore
+.markdownlint.json
 .oxfmtrc.json
 .oxlintrc.json
 esbuild.js
 pnpm-lock.yaml
 pnpm-workspace.yaml
 tsconfig.json
+vitest.config.mts

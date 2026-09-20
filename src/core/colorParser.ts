@@ -49,7 +49,8 @@ function getTailwindDefault(
 // ------------------------------------ REGEX PATTERNS -----------------------------------
 
 /** Matches `var(--name)` and also SCSS `$name` and LESS `@name`. Excludes definitions (followed by `:`). */
-const VAR_USE_RX = /(?:var\(\s*(?<name1>--[a-zA-Z0-9_-]+)|(?<name2>[$@][a-zA-Z0-9_-]+)(?!\s*:))/g;
+const VAR_USE_RX =
+  /(?:var\(\s*(?<name1>--[a-zA-Z0-9_-]+)|(?<name2>[$@][a-zA-Z0-9_-]+)(?![a-zA-Z0-9_-])(?!\s*:))/g;
 
 /** Matches Tailwind CSS color utility classes. */
 const TAILWIND_PREFIXES =
@@ -159,52 +160,34 @@ function getVariableDefName(
   return undefined;
 }
 
-function generateUsageMatches(
-  varUsages: { name: string; start: number; end: number; matchText: string }[],
-  options: DocumentResolvedConfig & { uri?: string; extractOnly?: boolean }
-): ColorMatch[] {
-  const usageMatches: ColorMatch[] = [];
-  for (const usage of varUsages) {
-    const colorData = resolveVariable(usage.name, options);
-    if (colorData) {
-      usageMatches.push({
-        color: colorData,
-        endOffset: usage.end,
-        originalText: usage.matchText,
-        startOffset: usage.start,
-      });
-    }
-  }
-  return usageMatches;
-}
-
 // oxlint-disable-next-line complexity
 function resolveAliasesAndUsages(
   text: string,
   options: DocumentResolvedConfig & { uri?: string; extractOnly?: boolean },
-  isInsideComment: (index: number) => boolean
+  isInsideComment: (index: number) => boolean,
+  directVarDefs: { name: string; color: ColorData; offset: number }[] = []
 ): ColorMatch[] {
-  interface AliasDef {
-    target: string;
-    source: string;
-  }
-  const aliases: AliasDef[] = [];
-  const varUsages: { name: string; start: number; end: number; matchText: string }[] = [];
-
   if (!text.includes('var(') && !text.includes('$') && !text.includes('@')) {
     return [];
   }
+
+  // Collect all variable references in document order, noting which are alias definitions.
+  interface VarEntry {
+    name: string;
+    defName: string | undefined;
+    start: number;
+    end: number;
+    matchText: string;
+  }
+  const entries: VarEntry[] = [];
 
   for (const varMatch of text.matchAll(VAR_USE_RX)) {
     const varName = varMatch.groups?.name1 || varMatch.groups?.name2;
     if (varName) {
       const defName = getVariableDefName(text, varMatch.index, isInsideComment);
-      if (defName) {
-        aliases.push({ source: varName, target: defName });
-      }
-
       const offset = varMatch.index + varMatch[0].indexOf(varName);
-      varUsages.push({
+      entries.push({
+        defName,
         end: offset + varName.length,
         matchText: varName,
         name: varName,
@@ -213,15 +196,26 @@ function resolveAliasesAndUsages(
     }
   }
 
-  // Resolve aliases iteratively (up to 5 levels deep) to handle forward references.
+  if (entries.length === 0 && directVarDefs.length === 0) {
+    return [];
+  }
+
+  // First pass: resolve all alias definitions for the global variable store.
+  // This handles cross-file references and forward references.
+  // Later aliases for the same target overwrite earlier ones (last definition wins).
+  const aliases = entries
+    .filter((e): e is VarEntry & { defName: string } => e.defName !== undefined)
+    .map((e) => ({ source: e.name, target: e.defName }));
+
   let changed = true;
   let iterations = 0;
   while (changed && iterations < 5) {
     changed = false;
     for (const alias of aliases) {
-      if (!getVariable(alias.target)) {
-        const colorData = resolveVariable(alias.source, options);
-        if (colorData) {
+      const colorData = resolveVariable(alias.source, options);
+      if (colorData) {
+        const existing = getVariable(alias.target);
+        if (!existing || existing.css !== colorData.css) {
           setVariable(alias.target, colorData, options.uri ?? '');
           changed = true;
         }
@@ -234,7 +228,49 @@ function resolveAliasesAndUsages(
     return [];
   }
 
-  return generateUsageMatches(varUsages, options);
+  // Second pass: walk entries in document order with positional overrides.
+  // When the same variable is redefined at different points in the file (e.g.
+  // `--term-bg: var(--term-black)` then later `--term-bg: var(--term-br-black)`),
+  // each usage resolves to whatever value was most recently assigned above it.
+  //
+  // Direct variable definitions (e.g., `--term-bg: #a8f`) are also tracked here
+  // so that a direct color assignment overrides a previous var() alias.
+  const localOverrides = new Map<string, ColorData>();
+  const usageMatches: ColorMatch[] = [];
+
+  // Merge directVarDefs into the positional walk by interleaving them with
+  // var-reference entries in document order.
+  let directIdx = 0;
+
+  for (const entry of entries) {
+    // Inject any direct variable definitions that appear before this entry.
+    while (directIdx < directVarDefs.length && directVarDefs[directIdx].offset <= entry.start) {
+      const directDef = directVarDefs[directIdx];
+      localOverrides.set(directDef.name, directDef.color);
+      directIdx += 1;
+    }
+
+    if (entry.defName) {
+      // Alias definition line: resolve the source and record the local override.
+      const colorData = localOverrides.get(entry.name) ?? resolveVariable(entry.name, options);
+      if (colorData) {
+        localOverrides.set(entry.defName, colorData);
+      }
+    }
+
+    // Resolve this reference: local overrides first, then global store.
+    const colorData = localOverrides.get(entry.name) ?? resolveVariable(entry.name, options);
+    if (colorData) {
+      usageMatches.push({
+        color: colorData,
+        endOffset: entry.end,
+        originalText: entry.matchText,
+        startOffset: entry.start,
+      });
+    }
+  }
+
+  return usageMatches;
 }
 
 /** Check if a Tailwind class is properly bounded (not part of a CSS selector or longer word). */
@@ -374,6 +410,56 @@ function isOffsetInRegions(offset: number, regions: { start: number; end: number
   return false;
 }
 
+/**
+ * Check if a named-color match is part of a variable name (`$blue`, `@blue`, `--blue`),
+ * a CSS/SCSS selector (`.red`, `#red`), or a quoted string (`'red'`, `"red"`).
+ * In all cases the word should NOT be highlighted as a named color.
+ */
+function isNamedColorInNonValueContext(text: string, offset: number): boolean {
+  if (offset <= 0) {
+    return false;
+  }
+  const prev = text[offset - 1];
+
+  // Variable names: $blue, @blue
+  if (prev === '$' || prev === '@') {
+    return true;
+  }
+  // CSS custom property names: --blue
+  if (prev === '-' && offset > 1 && text[offset - 2] === '-') {
+    return true;
+  }
+  // CSS class selectors: .red
+  if (prev === '.') {
+    return true;
+  }
+  // CSS ID selectors: #red (hex colors are handled by the hex strategy, not named-color path)
+  if (prev === '#') {
+    return true;
+  }
+  // Quoted strings: 'red', "red"; string literals in CSS/SCSS are never color values
+  if (prev === "'" || prev === '"') {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Matches quoted SASS/SCSS map keys followed by a colon: `'key':` or `"key":`.
+ * The entire quoted key portion (including quotes) is captured as a suppressed range
+ * so that named colors inside map keys are not highlighted.
+ */
+const SASS_MAP_KEY_RX = /['"][a-zA-Z0-9_-]+['"]\s*:/g;
+
+function collectSassMapKeyRanges(text: string): { start: number; end: number }[] {
+  const ranges: { start: number; end: number }[] = [];
+  for (const match of text.matchAll(SASS_MAP_KEY_RX)) {
+    // Suppress from the start of the quoted key up to (but not including) the colon.
+    ranges.push({ end: match.index + match[0].indexOf(':'), start: match.index });
+  }
+  return ranges;
+}
+
 function extractNamedColors(
   text: string,
   languageId: string,
@@ -391,6 +477,10 @@ function extractNamedColors(
   // CSS contexts (`<style>` blocks and `style`/`:style` attributes); never in class names, scripts, or markup.
   const cssRegions = isMixedCss ? collectCssRegions(text) : undefined;
 
+  // In SCSS/SASS/LESS files, suppress named-color matches inside map keys.
+  const sassMapKeyRanges =
+    isPureCss && languageId !== 'css' ? collectSassMapKeyRanges(text) : undefined;
+
   const results: ColorMatch[] = [];
   for (const wordMatch of text.matchAll(WORD_RX)) {
     const word = wordMatch[0].toLowerCase();
@@ -405,7 +495,14 @@ function extractNamedColors(
       // Skip words adjacent to hyphens (e.g., utility classes or variables).
       const isClassFragment = isAdjacentToHyphen(text, offset, end);
 
-      if (inCssContext && !isClassFragment) {
+      // Skip named colors in variable names ($blue, @blue, --blue) or selectors (.red, #red).
+      const isNonValue = isNamedColorInNonValueContext(text, offset);
+
+      // Skip named colors inside SASS map keys ('black': ..., 'red': ...).
+      const isMapKey =
+        sassMapKeyRanges !== undefined && isOffsetInRegions(offset, sassMapKeyRanges);
+
+      if (inCssContext && !isClassFragment && !isNonValue && !isMapKey) {
         const colorData: ColorData =
           rgb === SPECIAL_TRANSPARENT
             ? {
@@ -432,6 +529,148 @@ function extractNamedColors(
           startOffset: offset,
         });
       }
+    }
+  }
+  return results;
+}
+// ----------------------------------- @PROPERTY SUPPORT ---------------------------------
+
+/** Matches `@property` blocks and captures the variable name and `initial-value`. */
+const AT_PROPERTY_RX =
+  /@property\s+(?<propName>--[a-zA-Z0-9_-]+)\s*\{[^}]*initial-value:\s*(?<initValue>[^;}\n]+)/g;
+
+/**
+ * Pre-pass: extract color definitions from CSS `@property` rules.
+ * Registers the `initial-value` color under the property's custom-property name
+ * so that `var(--name)` references resolve correctly.
+ */
+function extractPropertyDefinitions(
+  text: string,
+  options: DocumentResolvedConfig & { uri?: string }
+): void {
+  for (const match of text.matchAll(AT_PROPERTY_RX)) {
+    const { propName, initValue } = match.groups as { propName: string; initValue: string };
+    const valueStr = initValue.trim();
+    const colorData = extractWithStrategies(valueStr, options);
+    if (colorData) {
+      setVariable(propName, colorData, options.uri ?? '');
+    }
+  }
+}
+
+// ---------------------------------- SASS MAP SUPPORT -----------------------------------
+
+/** VS Code language IDs that support SASS map syntax. */
+const SASS_LANGUAGES: ReadonlySet<string> = new Set<string>(['sass', 'scss', 'less']);
+
+/** Matches SASS map variable definitions: `$name: (` */
+const SASS_MAP_DEF_START_RX = /(?<mapName>\$[a-zA-Z0-9_-]+)\s*:\s*\(/g;
+
+/** Matches `map-get($mapName, 'key')` or `map.get($mapName, 'key')`. */
+const SASS_MAP_GET_RX =
+  /map[-.]get\(\s*(?<mapRef>\$[a-zA-Z0-9_-]+)\s*,\s*['"](?<lookupKey>[a-zA-Z0-9_-]+)['"]\s*\)/g;
+
+/** Find the closing `)` matching an opening `(` at `openIndex`, respecting nesting. */
+function findClosingParen(text: string, openIndex: number): number {
+  let depth = 1;
+  for (let i = openIndex + 1; i < text.length; i += 1) {
+    if (text[i] === '(') {
+      depth += 1;
+    } else if (text[i] === ')') {
+      depth -= 1;
+      if (depth === 0) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
+/**
+ * Split a SASS map body on commas at nesting depth 0.
+ * Handles nested function calls like `rgba(...)` correctly.
+ */
+function splitMapEntries(body: string): string[] {
+  const entries: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < body.length; i += 1) {
+    if (body[i] === '(') {
+      depth += 1;
+    } else if (body[i] === ')') {
+      depth -= 1;
+    } else if (body[i] === ',' && depth === 0) {
+      entries.push(body.slice(start, i));
+      start = i + 1;
+    }
+  }
+  const last = body.slice(start).trim();
+  if (last) {
+    entries.push(body.slice(start));
+  }
+  return entries;
+}
+
+/** Extracts the key and value from a single SASS map entry string like `'key': value`. */
+const SASS_MAP_ENTRY_RX = /^\s*['"]?(?<entryKey>[a-zA-Z0-9_-]+)['"]?\s*:\s*(?<entryValue>[\s\S]+)$/;
+
+/**
+ * Pre-pass: parse SASS map definitions and register each key-value pair
+ * as a virtual variable `$mapName::keyName` for map-get resolution.
+ * Skips nested sub-maps (values starting with `(`) to avoid incorrect matches.
+ */
+function extractSassMapDefinitions(
+  text: string,
+  options: DocumentResolvedConfig & { uri?: string }
+): void {
+  for (const mapMatch of text.matchAll(SASS_MAP_DEF_START_RX)) {
+    const { mapName } = mapMatch.groups as { mapName: string };
+    const openParen = mapMatch.index + mapMatch[0].length - 1;
+    const closeParen = findClosingParen(text, openParen);
+    if (closeParen !== -1) {
+      const mapBody = text.slice(openParen + 1, closeParen);
+      const entries = splitMapEntries(mapBody);
+
+      for (const entry of entries) {
+        const entryMatch = SASS_MAP_ENTRY_RX.exec(entry);
+        if (entryMatch?.groups) {
+          const key = entryMatch.groups.entryKey;
+          const valueStr = entryMatch.groups.entryValue.trim();
+          // Skip nested sub-maps (values starting with `(`) to avoid incorrect matches.
+          if (!valueStr.startsWith('(')) {
+            const colorData = extractWithStrategies(valueStr, options);
+            if (colorData) {
+              setVariable(`${mapName}::${key}`, colorData, options.uri ?? '');
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Resolve `map-get($mapName, 'key')` calls to previously registered map entries.
+ * Returns `ColorMatch` results for each successfully resolved call.
+ */
+function extractSassMapGets(
+  text: string,
+  options: DocumentResolvedConfig & { uri?: string; extractOnly?: boolean }
+): ColorMatch[] {
+  if (options.extractOnly) {
+    return [];
+  }
+  const results: ColorMatch[] = [];
+  for (const match of text.matchAll(SASS_MAP_GET_RX)) {
+    const { mapRef, lookupKey } = match.groups as { mapRef: string; lookupKey: string };
+    const colorData = getVariable(`${mapRef}::${lookupKey}`);
+    if (colorData) {
+      results.push({
+        color: colorData,
+        endOffset: match.index + match[0].length,
+        originalText: match[0],
+        startOffset: match.index,
+      });
     }
   }
   return results;
@@ -484,8 +723,19 @@ export function extractColors(
 
   const colorRe = getRegex(options);
 
+  // [0] CSS @property definitions: extract `initial-value` colors before the main scan
+  //     so `var(--name)` usages can resolve to the @property's initial value.
+  extractPropertyDefinitions(text, options);
+
+  // [0b] SASS map definitions: extract key-value pairs from `$map: (...)` so
+  //      `map-get($map, 'key')` calls can be resolved to their stored colors.
+  if (SASS_LANGUAGES.has(languageId)) {
+    extractSassMapDefinitions(text, options);
+  }
+
   // [1] Functional and hexa colors (all languages):
   const regexMatches: ColorMatch[] = [];
+
   for (const match of text.matchAll(colorRe)) {
     let colorData: ColorData | undefined = undefined;
     const { groups } = match;
@@ -521,7 +771,7 @@ export function extractColors(
     namedMatches = extractNamedColors(text, languageId, options, isInsideComment);
   }
 
-  // [3] Tailwind Classes:
+  // [3] Tailwind classes:
   // Most specific; Run after variable registrations so `resolveVariable` works, but passed
   // to `mergeNonOverlapping` FIRST so it overrides generic matches and preserves alpha.
   let tailwindMatches: ColorMatch[] = [];
@@ -537,11 +787,38 @@ export function extractColors(
     return results;
   }
 
-  // [4] Extract and resolve Variable Aliases, and CSS Variable Usages:
-  const usageMatches = resolveAliasesAndUsages(text, options, isInsideComment);
+  // [4] Extract and resolve variable aliases, and CSS variable usages:
+  // Build `directVarDefs` from ALL color matches (regex + named) so the positional
+  // override system sees every variable definition regardless of how the color was
+  // detected (hex, rgb, named CSS color, @property, etc.):
+  const directVarDefs: { name: string; color: ColorData; offset: number }[] = [];
+  const allColorMatches = [...regexMatches, ...namedMatches];
+  for (const colorMatch of allColorMatches) {
+    const defName = getVariableDefName(text, colorMatch.startOffset, isInsideComment);
+    if (defName) {
+      directVarDefs.push({
+        color: colorMatch.color,
+        name: defName,
+        offset: colorMatch.startOffset,
+      });
+    }
+  }
+
+  // Sort by offset so the positional walk interleaves them correctly:
+  directVarDefs.sort((defA, defB) => defA.offset - defB.offset);
+
+  const usageMatches = resolveAliasesAndUsages(text, options, isInsideComment, directVarDefs);
 
   if (options.markVariables && usageMatches.length > 0) {
     results = mergeNonOverlapping(results, usageMatches);
+  }
+
+  // [5] SASS map-get() resolution:
+  if (SASS_LANGUAGES.has(languageId)) {
+    const mapGetMatches = extractSassMapGets(text, options);
+    if (mapGetMatches.length > 0) {
+      results = mergeNonOverlapping(results, mapGetMatches);
+    }
   }
 
   return results;

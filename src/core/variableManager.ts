@@ -33,7 +33,12 @@ export function setVariable(name: string, color: ColorData, uri: string): void {
 export function getVariable(name: string): ColorData | undefined {
   const varMap = globalVariables.get(name);
   if (varMap && varMap.size > 0) {
-    return varMap.values().next().value;
+    // Return the last set value (most recently defined/overwritten):
+    let lastValue: ColorData | undefined = undefined;
+    for (const value of varMap.values()) {
+      lastValue = value;
+    }
+    return lastValue;
   }
   return undefined;
 }
@@ -52,6 +57,12 @@ export function clearVariablesForUri(uri: string): void {
     }
     variablesByUri.delete(uri);
   }
+}
+
+/** Clear all variable definitions (used in tests to reset global state). */
+export function clearAllVariables(): void {
+  globalVariables.clear();
+  variablesByUri.clear();
 }
 
 export function getVariablesForUri(uri: string): Map<string, ColorData> {

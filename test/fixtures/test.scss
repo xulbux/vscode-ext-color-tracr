@@ -1,6 +1,7 @@
 /* SCSS test fixture for Color Tracr */
 
-/* SCSS variables */
+/************************************ SCSS Variables ************************************/
+
 $primary-color: #9670ff;
 $secondary-color: rgb(108, 108, 137);
 $bg-dark: color(display-p3 0.1 0.1 0.12);
@@ -11,20 +12,119 @@ $bg-dark: color(display-p3 0.1 0.1 0.12);
   border-color: $bg-dark;
 }
 
-/* LESS variables */
+/************************************ LESS Variables ************************************/
+
 @accent-color: hsl(12, 100%, 70%);
 
 .card {
   box-shadow: 0 4px 10px @accent-color;
 }
 
-/* Modern CSS Color Function */
+/****************************** Modern CSS Color Function *******************************/
+
 .p3-box {
   background: color(display-p3 1 0 0.32);
   border: 1px solid color(srgb-linear 0.8 0.2 0.3 / 50%);
 }
 
-/* Tailwind Arbitrary Values */
+/****************************** Tailwind Arbitrary Values *******************************/
+
 .custom-tw-bg {
   @apply bg-[#661616] text-[rgb(255,100,100)];
+}
+
+/********************* Issue S1: Color Maps; Values Marked, Keys Not ********************/
+/* The map keys that ARE named colors should NOT be marked. */
+/* The map values (color literals) SHOULD be marked. */
+
+$orgColors: (
+  'bash': rgba(224, 134, 39, 1),
+  'black': rgba(0, 0, 0, 1),
+  'grey': rgba(106, 106, 106, 1),
+  'grey-300': rgba(156, 156, 156, 1),
+  'grey-700': rgb(42, 42, 42, 1),
+  'grey-dark': rgb(64, 64, 64, 1),
+  'grey-light': rgba(205, 205, 205, 1),
+  'purple': rgba(127, 86, 217, 1),
+  'red': rgba(226, 6, 19, 1),
+  'water': rgb(25, 32, 43),
+  'white': rgba(255, 255, 255, 1),
+  'white-hover': rgba(230, 230, 230, 1),
+);
+
+/********************** Issue S3: Var-Def Name NOT Marked as Color **********************/
+/* `$blue` should NOT be highlighted as the named color "blue" */
+
+$blue: rgba(0, 0, 255, 1);
+
+/************************ Issue S4: Var Usage Resolves Correctly ************************/
+/* `$blue` should resolve to rgba(0, 0, 255, 1), NOT named CSS color "blue" */
+
+.example {
+  color: map-get($orgColors, 'red');
+  background-color: $blue;
+}
+
+/*************** Issue S5: Var-Def $bluish NOT Matched as Substring $blue ***************/
+/* `$bluish` should NOT be decorated at all (it's a definition name) */
+
+$bluish: rgba(0, 180, 255, 1);
+
+/********************************** Map-Get Edge Cases **********************************/
+
+@function color($name) {
+  @return map-get($orgColors, $name);
+}
+
+@each $name, $wert in $orgColors {
+  :root {
+    --color-#{$name}: #{$wert};
+  }
+}
+
+/****************************** Nested Maps (Skip Safely) *******************************/
+
+$theme-colors: (
+  'danger': (
+    'dark': #660000,
+    'light': #ffaaaa,
+  ),
+  'primary': (
+    'dark': #003366,
+    'light': #aaccff,
+  ),
+);
+
+/****************************** SCSS Variable Overrides *********************************/
+
+$override-color: #ff0000;
+
+.first-use {
+  color: $override-color;
+}
+
+$override-color: #00ff00;
+
+.second-use {
+  color: $override-color;
+}
+
+$override-color: blue;
+
+.third-use {
+  color: $override-color;
+}
+
+/****************************** LESS Variable Overrides *********************************/
+
+@less-color: #ff0000;
+
+.less-first {
+  color: @less-color;
+}
+
+@less-color: #0000ff;
+
+.less-second {
+  color: @less-color;
 }

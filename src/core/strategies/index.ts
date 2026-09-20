@@ -1,6 +1,7 @@
 import type { ColorData, ColorParsingStrategy, DocumentResolvedConfig } from '@/types';
 import { cmykStrategy } from './cmyk';
 import { colorFnStrategy } from './colorFn';
+import { csharpStrategy } from './csharp';
 import { hexStrategy } from './hex';
 import { hslStrategy } from './hsl';
 import { hsvStrategy } from './hsv';
@@ -12,6 +13,7 @@ import { swiftStrategy } from './swift';
 export const strategies: ColorParsingStrategy[] = [
   cmykStrategy,
   colorFnStrategy,
+  csharpStrategy,
   hexStrategy,
   hslStrategy,
   hsvStrategy,
