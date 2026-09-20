@@ -7,7 +7,7 @@
 <br>
 Color Tracr
 <br><br>
-<a href="https://open-vsx.org/extension/xulbux/color-tracr"><img src="https://img.shields.io/open-vsx/v/xulbux/color-tracr?style=flat&labelColor=404060&color=7075FF"/></a> <a href="https://open-vsx.org/extension/xulbux/color-tracr"><img src="https://img.shields.io/open-vsx/dt/xulbux/color-tracr?style=flat&labelColor=404060&color=7075FF"/></a> <a href="https://github.com/xulbux/vscode-ext-color-tracr/blob/main/LICENSE"><img src="https://img.shields.io/github/license/xulbux/vscode-ext-color-tracr?style=flat&labelColor=404060&color=A6A8FF"/></a> <a href="https://github.com/xulbux/vscode-ext-color-tracr/commits"><img src="https://img.shields.io/github/last-commit/xulbux/vscode-ext-color-tracr?style=flat&labelColor=554046&color=FF6680"/></a> <a href="https://github.com/xulbux/vscode-ext-color-tracr/issues"><img src="https://img.shields.io/github/issues/xulbux/vscode-ext-color-tracr?style=flat&labelColor=554046&color=FF6680"/></a> <a href="https://github.com/xulbux/vscode-ext-color-tracr/stargazers"><img src="https://img.shields.io/github/stars/xulbux/vscode-ext-color-tracr?label=★&style=flat&labelColor=554046&color=FF8FA2"/></a>
+<a href="https://open-vsx.org/extension/xulbux/color-tracr"><img src="https://img.shields.io/open-vsx/v/xulbux/color-tracr?style=flat&labelColor=404060&color=7075FF"/></a> <a href="https://open-vsx.org/extension/xulbux/color-tracr"><img src="https://img.shields.io/open-vsx/dt/xulbux/color-tracr?style=flat&labelColor=404060&color=7075FF"/></a> <a href="https://github.com/xulbux/vscode-ext-color-tracr/blob/main/LICENSE"><img src="https://img.shields.io/github/license/xulbux/vscode-ext-color-tracr?style=flat&labelColor=404060&color=A6A8FF"/></a> <a href="https://github.com/xulbux/vscode-ext-color-tracr/commits"><img src="https://img.shields.io/github/last-commit/xulbux/vscode-ext-color-tracr?style=flat&labelColor=554046&color=FF6680"/></a> <a href="https://github.com/xulbux/vscode-ext-color-tracr/issues"><img src="https://img.shields.io/github/issues/xulbux/vscode-ext-color-tracr?style=flat&labelColor=554046&color=FF6680"/></a> <a href="https://github.com/xulbux/vscode-ext-color-tracr/stargazers"><img src="https://img.shields.io/github/stars/xulbux/vscode-ext-color-tracr?label=%E2%98%85&style=flat&labelColor=554046&color=FF8FA2"/></a>
 </h1>
 <h3>Highly performant, ultra-lightweight color marking extension for the editor.</h3>
 <br><br>
@@ -64,7 +64,7 @@ ext install xulbux.color-tracr
       <td align="left"><b>Raw Number Matching</b></td>
       <td align="left">Detects raw CSS channels (e.g., <code>255, 0, 0</code> or <code>60% 0.15 25</code>) to support opacity modifiers in frameworks like Tailwind CSS.</td>
     </tr>
-    <tr>
+    %E2%98%85<tr>
       <td align="left"><b>Named Colors</b></td>
       <td align="left">Standard CSS color keywords (e.g., <code>red</code>, <code>transparent</code>, …)</td>
     </tr>
