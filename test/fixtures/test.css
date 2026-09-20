@@ -1,6 +1,6 @@
 /* CSS test fixture for Color Tracr */
 
-/****************************** Variable Definitions ******************************/
+/********************************* Variable Definitions *********************************/
 
 :root {
   --primary-color: #9670ff;
@@ -63,7 +63,7 @@
   --raw-lch-tp: 60% 40 25 / 0.5;
 }
 
-/********************************** Color Formats *********************************/
+/************************************ Color Formats *************************************/
 
 .hex-test {
   color: #f00;
@@ -80,7 +80,7 @@
   fill: hwb(140 25% 14%);
 }
 
-/********************************** Named Colors **********************************/
+/************************************* Named Colors *************************************/
 
 .named-colors-test {
   color: tomato;
@@ -89,7 +89,7 @@
   background-color: transparent;
 }
 
-/********************************* Variable Usages ********************************/
+/*********************************** Variable Usages ************************************/
 
 .var-usage-test {
   --alias: var(--secondary-color);
@@ -100,7 +100,7 @@
   background-color: var(--bg-dark);
 }
 
-/****************************** Hyphen Boundary Tests *****************************/
+/******************************** Hyphen Boundary Tests *********************************/
 /* Should NOT mark the color in the class name. */
 
 .btn-red {
@@ -111,9 +111,104 @@
   color: #40db80;
 }
 
-/********************************* Tailwind @apply ********************************/
+/*********************************** Tailwind @apply ************************************/
 
 .card-shadow {
   @apply shadow-lg border-gray-200;
   @apply text-indigo-700 border-[cornflowerblue] bg-white;
+}
+
+/***************************** Issue C1: @property Support ******************************/
+/* The color in `initial-value` SHOULD be detected and decorated. */
+/* `var(--main-bg-color)` should resolve to the @property's initial-value. */
+
+@property --main-bg-color {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #c0ffee;
+}
+
+details {
+  background-color: var(--main-bg-color);
+}
+
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgb(255, 100, 50);
+}
+
+.accent-box {
+  border-color: var(--accent);
+}
+
+/************************ Issue C2: Variable Overwrite Priority *************************/
+/* Even though `--term-bg` is redefined right above its usage, */
+/* the extension uses the color from wherever it was first defined, */
+/* instead of the closest/most-recent definition. */
+
+:root {
+  --term-black: rgb(0, 0, 0);
+  --term-br-black: rgb(128, 128, 128);
+}
+
+.bg-black {
+  --term-bg: var(--term-black);
+  background-color: var(--term-bg) !important;
+}
+
+.bg-br-black {
+  --term-bg: var(--term-br-black);
+  background-color: var(--term-bg) !important;
+}
+
+/* C2b: Direct value override — --term-bg set to a raw color, not a var() */
+.bg-custom {
+  --term-bg: #a8f;
+  background-color: var(--term-bg) !important;
+}
+
+/* C2c: Alias chain — --term-base-fg is locally set, --term-fg aliases it */
+.fg-black {
+  --term-base-fg: #000;
+  --term-fg: var(--term-base-fg);
+  color: var(--term-fg) !important;
+}
+
+/* C2d: Named color as value + alias chain */
+.br-black {
+  --term-base-fg: var(--term-br-black);
+  --term-fg: red;
+  color: var(--term-fg) !important;
+}
+
+/*************************** Issue C3: Class-Def Name Marking ***************************/
+/* `.red` the class name should NOT be marked as the named color "red". */
+/* Only color VALUES should be marked, not selectors. */
+
+.red {
+  color: #ff0000;
+}
+
+.blue {
+  color: #0000ff;
+}
+
+.green-card {
+  background: #00ff00;
+}
+
+/* Edge case: class name with named color at start */
+.coral-container {
+  border: 1px solid coral;
+}
+
+/* Edge case: ID selectors */
+#red {
+  color: crimson;
+}
+
+/* Edge case: Attribute selectors with color-like values */
+[data-color='red'] {
+  background: tomato;
 }

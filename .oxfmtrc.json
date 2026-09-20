@@ -4,7 +4,7 @@
   "bracketSameLine": true,
   "bracketSpacing": true,
   "endOfLine": "lf",
-  "ignorePatterns": ["package.json"],
+  "ignorePatterns": ["*.md", "package.json"],
   "objectWrap": "collapse",
   "proseWrap": "preserve",
   "quoteProps": "as-needed",

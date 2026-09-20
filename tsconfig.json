@@ -9,7 +9,7 @@
     "outDir": "./dist",
     "paths": { "@/*": ["./src/*"] },
     "resolveJsonModule": true,
-    "rootDir": "./src",
+    "rootDir": ".",
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
@@ -17,5 +17,5 @@
     "types": ["node"]
   },
   "exclude": ["node_modules", "dist"],
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }

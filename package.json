@@ -126,6 +126,8 @@
     "fmt:check": "oxfmt --check",
     "lint": "oxlint --fix",
     "lint:check": "oxlint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "type-check": "tsc --noEmit",
     "vscode:prepublish": "node esbuild.js --production",
     "watch": "node esbuild.js --watch"
@@ -140,7 +142,8 @@
     "jiti": "^2.7.0",
     "oxfmt": "^0.36.0",
     "oxlint": "^1.71.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.1"
   },
   "__metadata": {
     "id": "39cf6240-75d9-4602-97ff-1c0b1e355e94",
