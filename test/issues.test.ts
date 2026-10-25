@@ -271,3 +271,29 @@ describe('CSS Issues (test.css)', () => {
     expect(coralValue).toBeDefined();
   });
 });
+
+/********************************* Hex Boundary Issues **********************************/
+
+describe('Hex Boundary Issues', () => {
+  it('does NOT highlight 0x630 or 0x1080 inside dimension strings like 1200x630', () => {
+    const text = readFixture('test.js');
+    const opts = defaultConfig({ markNamedColors: false, uri: 'file:///test/test.js' });
+    const matches = extractColors(text, 'javascript', opts);
+
+    const falseHexMatches = matches.filter(
+      (match) => match.originalText === '0x630' || match.originalText === '0x1080'
+    );
+    expect(falseHexMatches).toHaveLength(0);
+  });
+
+  it('does NOT highlight HTML numeric character references like &#8194; or &#160;', () => {
+    const text = readFixture('test.html');
+    const opts = defaultConfig({ uri: 'file:///test/test.html' });
+    const matches = extractColors(text, 'html', opts);
+
+    const falseEntityMatches = matches.filter(
+      (match) => match.originalText === '#8194' || match.originalText === '#160'
+    );
+    expect(falseEntityMatches).toHaveLength(0);
+  });
+});

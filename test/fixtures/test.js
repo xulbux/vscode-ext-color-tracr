@@ -35,4 +35,7 @@ const iOSColors = [
   'Color(red: 1, green: 0, blue: 0, opacity: 0.5)',
 ];
 
-export { COLORS, styledComponentStyles, iOSColors };
+// Dimension strings (should NOT match hex colors inside resolution values)
+const ogImageDescription = 'serves /og.png (1200x630 RGB PNG) and 1920x1080 preview';
+
+export { COLORS, styledComponentStyles, iOSColors, ogImageDescription };

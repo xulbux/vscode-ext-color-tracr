@@ -94,5 +94,5 @@ export const hexStrategy: ColorParsingStrategy = {
   },
   id: 'hex',
   /** Hexa pattern: `#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA` and `0x…` equivalents. */
-  pattern: String.raw`(?:#|0x)(?:[0-9A-F]{3,4}|[0-9A-F]{6}|[0-9A-F]{8})\b`,
+  pattern: String.raw`(?<![a-z0-9_&#])(?:#|0x)(?:[0-9A-F]{3,4}|[0-9A-F]{6}|[0-9A-F]{8})\b`,
 };
