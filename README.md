@@ -9,8 +9,8 @@
     <br><br>
     <a href="https://open-vsx.org/extension/xulbux/color-tracr"><img src="https://svg.xul.is/badge/ovsx/xulbux/color-tracr/v?color=indigo" /></a>
     <a href="https://open-vsx.org/extension/xulbux/color-tracr"><img src="https://svg.xul.is/badge/ovsx/xulbux/color-tracr/dt?color=indigo" /></a>
-    <a href="https://github.com/xulbux/vscode-ext-color-tracr/blob/main/LICENSE"><img src="https://svg.xul.is/badge/License/MIT*?variant=2&color=indigo&icon=scale" /></a>
-    <a href="https://github.com/xulbux/vscode-ext-color-tracr/commits"><img src="https://svg.xul.is/badge/gh/xulbux/vscode-ext-color-tracr/commit?variant=2&color=rose"/></a>
+    <a href="https://github.com/xulbux/vscode-ext-color-tracr/blob/main/LICENSE"><img src="https://svg.xul.is/badge/License/MIT*?variant=3&color=neutral&icon=scale" /></a>
+    <a href="https://github.com/xulbux/vscode-ext-color-tracr/commits"><img src="https://svg.xul.is/badge/gh/xulbux/vscode-ext-color-tracr/commit?variant=3&color=neutral"/></a>
     <a href="https://github.com/sponsors/xulbux"><img src="https://svg.xul.is/badge/Sponsor?variant=2&color=rose&icon=heart&anim=pulse"/></a>
   </h1>
   <h3>Highly performant, ultra-lightweight color marking extension for the editor.</h3>
