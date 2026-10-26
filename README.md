@@ -1,7 +1,7 @@
 <div align="center">
   <br><br>
   <h1>
-    <a href="https://github.com/xulbux/vscode-ext-color-tracr"><img width="96" src="https://raw.githubusercontent.com/xulbux/vscode-ext-color-tracr/main/assets/icon.png"></a>
+    <a href="https://github.com/xulbux/vscode-ext-color-tracr"><img height="96" src="https://raw.githubusercontent.com/xulbux/vscode-ext-color-tracr/main/assets/icon.png"></a>
     <br>
     Color Tracr
     <br><br>
